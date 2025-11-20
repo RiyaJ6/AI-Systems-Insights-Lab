@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Systems Insights Lab — Interactive</title>
+  <link rel="stylesheet" href="styles.css">
+  <meta name="description" content="Interactive lab that visualizes how AI models reason and how data shifts predictions.">
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <img src="assets/banner.svg" alt="AI Systems Insights Lab" class="banner">
+    </div>
+    <p class="subtitle">Interactive lab — model reasoning, dataset slices, pipeline flow. Zero installs.</p>
+  </header>
+
+  <main class="container">
+    <section id="hero" class="card">
+      <h2>Try the Model (simulated)</h2>
+      <div class="controls">
+        <textarea id="prompt" placeholder="Type a short prompt (e.g. 'The doctor said that')"></textarea>
+        <div class="row">
+          <button id="runSim" class="primary">Run (simulate)</button>
+          <button id="runReal" disabled title="Enable after you add a proxy function">Run (real API)</button>
+          <button id="copyRepo" data-copy="https://github.com/YOU/ai-systems-insights-lab">Copy repo link</button>
+        </div>
+      </div>
+      <div id="modelOutput" class="output" aria-live="polite"></div>
+      <div id="tokenViz" class="viz" role="img" aria-label="Token probability visualization"></div>
+    </section>
+
+    <section id="bias" class="card">
+      <h2>Bias Explorer</h2>
+      <div class="row">
+        <select id="pattern">
+          <option value="The doctor said">The doctor said...</option>
+          <option value="The nurse said">The nurse said...</option>
+          <option value="The programmer said">The programmer said...</option>
+        </select>
+        <button id="runBias">Analyze</button>
+      </div>
+      <div id="biasResults" class="output"></div>
+    </section>
+
+    <section id="pipeline" class="card">
+      <h2>Pipeline Flow (interactive)</h2>
+      <div id="dag" class="dag" aria-hidden="false"></div>
+      <p class="muted">Click nodes to reveal transformation details.</p>
+    </section>
+
+    <section id="observable" class="card">
+      <h2>Interactive Charts (Observable)</h2>
+      <p>Paste an Observable embed URL into the iframe `src` later.</p>
+      <iframe id="obsEmbed" src="about:blank" style="width:100%;height:420px;border:0"></iframe>
+    </section>
+
+    <footer class="site-foot muted">
+      Built by Queen — AI & Big Data •
+      <a id="repoLink" href="https://github.com/RiyaJ6/AI-Systems-Insights-Lab" target="_blank" rel="noopener">Source</a>
+    </footer>
+  </main>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
