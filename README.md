@@ -65,5 +65,3 @@ This project is licensed under the MIT License — see `LICENSE`.
 ---
 
 
-
-Say **A**, **B**, or **C** to continue — or proceed to the next step yourself.
