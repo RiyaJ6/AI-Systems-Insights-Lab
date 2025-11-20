@@ -8,58 +8,84 @@
   <meta name="description" content="Interactive lab that visualizes how AI models reason and how data shifts predictions.">
 </head>
 <body>
-  <header class="site-header">
+  <header class="site-header" role="banner">
     <div class="brand">
-      <img src="assets/banner.svg" alt="AI Systems Insights Lab" class="banner">
+      <!-- If you have assets/banner.svg keep path, otherwise this text acts as logo -->
+      <img src="assets/banner.svg" alt="AI Systems Insights Lab" class="banner" onerror="this.style.display='none'">
+      <div class="brand-text">
+        <h1>AI Systems Insights Lab</h1>
+        <p class="subtitle">Interactive model reasoning · pipeline visualization · bias explorer</p>
+      </div>
     </div>
-    <p class="subtitle">Interactive lab — model reasoning, dataset slices, pipeline flow. Zero installs.</p>
   </header>
 
-  <main class="container">
-    <section id="hero" class="card">
-      <h2>Try the Model (simulated)</h2>
-      <div class="controls">
-        <textarea id="prompt" placeholder="Type a short prompt (e.g. 'The doctor said that')"></textarea>
-        <div class="row">
-          <button id="runSim" class="primary">Run (simulate)</button>
-          <button id="runReal" disabled title="Enable after you add a proxy function">Run (real API)</button>
-          <button id="copyRepo" data-copy="https://github.com/YOU/ai-systems-insights-lab">Copy repo link</button>
+  <main class="container" role="main">
+    <section id="hero" class="card" aria-labelledby="hero-h">
+      <div class="hero-head">
+        <h2 id="hero-h">Try the Model (simulated)</h2>
+        <div class="examples">
+          <button class="chip" data-example="The doctor said that">The doctor said that</button>
+          <button class="chip" data-example="The programmer explained">The programmer explained</button>
+          <button class="chip" data-example="In the meeting, the CEO">In the meeting, the CEO</button>
         </div>
       </div>
+
+      <label for="prompt" class="visually-hidden">Prompt</label>
+      <textarea id="prompt" aria-label="Prompt" placeholder="Type any sentence or prompt here — e.g., 'The doctor said that'"></textarea>
+
+      <div class="controls">
+        <div class="left">
+          <button id="runSim" class="primary" title="Run a simulation of token probabilities">Run (simulate)</button>
+          <button id="runReal" disabled title="Enable after you add a proxy function">Run (real API)</button>
+          <button id="shareBtn" title="Share a reproducible link for this input">Share</button>
+        </div>
+        <div class="right">
+          <button id="copyRepo" data-copy="https://github.com/YOU/ai-systems-insights-lab" title="Copy repo link">Copy repo</button>
+        </div>
+      </div>
+
+      <div id="status" class="status muted" role="status" aria-live="polite">Ready — enter a prompt and click Run</div>
+
       <div id="modelOutput" class="output" aria-live="polite"></div>
-      <div id="tokenViz" class="viz" role="img" aria-label="Token probability visualization"></div>
+
+      <div id="tokenViz" class="viz" aria-hidden="false"></div>
     </section>
 
-    <section id="bias" class="card">
-      <h2>Bias Explorer</h2>
+    <section id="bias" class="card" aria-labelledby="bias-h">
+      <h3 id="bias-h">Bias Explorer</h3>
       <div class="row">
-        <select id="pattern">
+        <select id="pattern" aria-label="Pattern selector">
           <option value="The doctor said">The doctor said...</option>
           <option value="The nurse said">The nurse said...</option>
           <option value="The programmer said">The programmer said...</option>
+          <option value="The teacher told">The teacher told...</option>
         </select>
         <button id="runBias">Analyze</button>
       </div>
       <div id="biasResults" class="output"></div>
     </section>
 
-    <section id="pipeline" class="card">
-      <h2>Pipeline Flow (interactive)</h2>
-      <div id="dag" class="dag" aria-hidden="false"></div>
-      <p class="muted">Click nodes to reveal transformation details.</p>
+    <section id="pipeline" class="card" aria-labelledby="pipeline-h">
+      <h3 id="pipeline-h">Pipeline Flow (interactive)</h3>
+      <div id="dag" class="dag" role="presentation"></div>
+      <p class="muted small">Click nodes to reveal transformation details.</p>
     </section>
 
-    <section id="observable" class="card">
-      <h2>Interactive Charts (Observable)</h2>
-      <p>Paste an Observable embed URL into the iframe `src` later.</p>
-      <iframe id="obsEmbed" src="about:blank" style="width:100%;height:420px;border:0"></iframe>
+    <section id="observable" class="card" aria-labelledby="observable-h">
+      <h3 id="observable-h">Interactive Charts (Observable)</h3>
+      <p class="muted small">Replace iframe `src` with your Observable embed URL to show charts here.</p>
+      <iframe id="obsEmbed" src="about:blank" style="width:100%;height:360px;border:0" title="Observable embed"></iframe>
     </section>
 
-    <footer class="site-foot muted">
-      Built by Queen — AI & Big Data •
-      <a id="repoLink" href="https://github.com/RiyaJ6/AI-Systems-Insights-Lab" target="_blank" rel="noopener">Source</a>
+    <footer class="site-foot muted" role="contentinfo">
+      Built by <strong>RJ</strong> — AI & Big Data •
+      <a id="repoLink" href="https://github.com/YOU/ai-systems-insights-lab" target="_blank" rel="noopener">Source</a>
     </footer>
   </main>
+
+  <template id="tooltip-tpl">
+    <div class="tooltip" role="tooltip"><span class="tt-text"></span></div>
+  </template>
 
   <script src="scripts.js"></script>
 </body>
