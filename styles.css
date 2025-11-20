@@ -1,0 +1,30 @@
+:root{
+  --bg:#0f1724; --glass: rgba(255,255,255,0.03); --muted:#9aa7b2; --accent:#7dd3fc;
+  --card-radius:12px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#061021);color:#e6eef6;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+a{color:var(--accent);text-decoration:none}
+.site-header{padding:26px 18px;text-align:center}
+.banner{max-width:420px;width:100%;height:auto;display:inline-block}
+.subtitle{margin:6px 0 0;color:var(--muted);font-size:14px}
+.container{max-width:980px;margin:18px auto;padding:0 16px}
+.card{background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:18px;border-radius:var(--card-radius);margin-bottom:14px;backdrop-filter:blur(6px)}
+.controls textarea{width:100%;height:80px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;margin-bottom:10px;resize:vertical}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+button{background:transparent;border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:8px;cursor:pointer}
+button.primary{background:linear-gradient(90deg,var(--accent),#60a5fa);color:#032; border:none}
+.output{margin-top:8px;padding:12px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
+.viz{margin-top:10px}
+.muted{color:var(--muted);font-size:13px}
+select{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+#dag{min-height:140px}
+.node{display:inline-block;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+.token-row{display:flex;justify-content:space-between;margin:6px 0}
+.token-row div:first-child{flex:0 0 auto;padding-right:8px}
+.token-row .bar{height:10px;border-radius:6px;background:rgba(255,255,255,0.06);overflow:hidden;width:100%}
+.token-row .bar > .fill{height:10px;width:0;transition:width .6s}
+@media (max-width:640px){
+  .row{flex-direction:column;align-items:stretch}
+  .banner{max-width:280px}
+}
