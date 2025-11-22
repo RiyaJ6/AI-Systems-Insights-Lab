@@ -1,0 +1,24 @@
+# Appendix — Architecture & Notes
+
+## Overview
+AI Systems Insights Lab is a browser-first interactive lab that visualizes model-level reasoning and pipeline flow. The front-end is static (GitHub Pages), with an optional serverless inference proxy for secure API usage.
+
+## Components
+- **Frontend**: `index.html`, `styles.css`, `scripts.js` — hosted on GitHub Pages.
+- **Serverless proxy**: Netlify / Vercel function — keeps API keys in environment variables.
+- **Observable charts**: interactive visual charts embedded via iframe.
+
+## Security
+- API keys are stored as environment variables on Netlify/Vercel; never embed keys in client code.
+- Client calls the proxy (same-origin) — proxy handles the external API call to OpenAI.
+
+## Token probs & interpretation
+- When OpenAI model returns `logprobs`, we convert logprob -> probability with `exp(logprob)` (approx) and present the top token probability per position.
+- If `logprobs` not available, the UI falls back to deterministic simulation to maintain UX.
+
+## Deployment checklist
+1. Deploy static site to GitHub Pages.
+2. Deploy serverless function to Netlify or Vercel and set `OPENAI_API_KEY`.
+3. Test `Run (real API)` — ensure function returns `provider: 'openai'` and `raw` JSON.
+
+---
