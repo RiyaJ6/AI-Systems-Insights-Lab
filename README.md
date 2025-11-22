@@ -5,6 +5,7 @@
 **Author:** Riya Jain: AI & Big Data  
 **Live demo:** https://<RiyaJ6>.github.io/AI-Systems-Insights-Lab  
 **Repo:** https://github.com/<RiyaJ6>/AI-Systems-Insights-Lab
+[![Pages](https://img.shields.io/badge/pages-deployed-brightgreen)](https://<RiyaJ6>.github.io/AI-Systems-Insights-Lab)
 
 ---
 
