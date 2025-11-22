@@ -1,7 +1,0 @@
-<!-- assets/favicon.svg -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-  <rect width="48" height="48" rx="8" fill="#062233"/>
-  <g transform="translate(8,8)" fill="none" stroke="#7dd3fc" stroke-width="2.8">
-    <path d="M2 26 L8 12 L18 22 L26 6" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-</svg>
