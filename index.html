@@ -5,544 +5,595 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>AI Insights Lab — Epic UI</title>
 
-<!-- Chart.js -->
+<!-- Chart.js for charts -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- PDF.js for PDF text extraction -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 
 <style>
   :root{
-    --bg:#07122b; --surface:#0f2338; --muted:#98a6b3; --accent:#7c3aed; --glass: rgba(255,255,255,0.03);
+    --bg-1: #071122;
+    --bg-2: #071b2c;
+    --card: rgba(255,255,255,0.03);
+    --muted: #9fb0c6;
+    --accent: #7c3aed;
+    --accent-2: #34d399;
+    --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+    --glass-border: rgba(255,255,255,0.05);
   }
+
   *{box-sizing:border-box}
-  body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:linear-gradient(180deg,#041022,#07122b);color:#e9f2fb}
-  .wrap{max-width:1200px;margin:28px auto;padding:20px}
-  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
-  .title{display:flex;flex-direction:column}
-  h1{margin:0;font-size:20px}
-  .sub{color:var(--muted);font-size:13px;margin-top:6px}
-  .controls{display:flex;gap:8px;align-items:center}
-  .btn{background:var(--accent);color:white;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
-  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:14px;border-radius:12px}
-  .grid{display:grid;grid-template-columns:340px 1fr;gap:18px}
-  .uploader{border:2px dashed var(--glass);padding:12px;text-align:center;border-radius:10px;cursor:pointer}
-  input[type=file]{display:none}
-  .small{font-size:13px;color:var(--muted)}
-  textarea{width:100%;min-height:80px;background:transparent;border-radius:8px;padding:10px;border:1px solid rgba(255,255,255,0.04);color:inherit}
-  .docs{margin:8px 0;padding:0;list-style:none}
-  .docs li{padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
-  .insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
-  .insight{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
-  .row{display:flex;gap:8px;align-items:center}
-  .chart-wrap{height:220px}
-  .viewer{height:210px;overflow:auto;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:rgba(0,0,0,0.15)}
-  .kpi{display:flex;gap:12px}
-  .kpi .item{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;min-width:110px;text-align:center}
-  .theme-toggle{padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted)}
-  footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
-  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+    background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent 8%),
+                radial-gradient(900px 400px at 90% 85%, rgba(52,211,153,0.06), transparent 6%),
+                linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    color:#eaf6ff;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow-y:auto;
+  }
+
+  /* layout */
+  .wrap { max-width:1180px; margin:28px auto; padding:22px; }
+  header.hero{
+    display:flex; gap:20px; align-items:center; justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .brand{
+    display:flex; gap:16px; align-items:center;
+  }
+
+  /* Logo badge */
+  .logo {
+    width:72px; height:72px; border-radius:18px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(52,211,153,0.08));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 8px 30px rgba(4,6,12,0.6);
+    transform: translateZ(0);
+    transition:transform .36s cubic-bezier(.2,.9,.2,1);
+  }
+  .logo:hover{ transform: translateY(-6px) rotate(-4deg) scale(1.02) }
+
+  .logo svg { filter: drop-shadow(0 6px 18px rgba(124,58,237,0.16)); }
+
+  .title h1{ margin:0; font-size:20px; letter-spacing:-0.2px; }
+  .title p{ margin:4px 0 0; color:var(--muted); font-size:13px }
+
+  /* controls */
+  .controls { display:flex; gap:10px; align-items:center; }
+  .select, .toggle, .btn {
+    background:transparent; border:1px solid var(--glass-border); padding:8px 12px; border-radius:10px;
+    color:inherit; font-weight:600; font-size:13px; cursor:pointer;
+    transition: all .18s ease;
+  }
+  .select:focus, .toggle:focus, .btn:focus{ outline:none; box-shadow: 0 6px 20px rgba(0,0,0,0.4) }
+  .btn.primary{
+    background: linear-gradient(90deg,var(--accent), #5b21b6); color:white; border: none; padding:9px 14px;
+    box-shadow: 0 8px 30px rgba(92,33,204,0.14), inset 0 -1px 0 rgba(255,255,255,0.03);
+  }
+  .btn.ghost{ background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted) }
+
+  /* main grid */
+  .grid { display:grid; grid-template-columns:360px 1fr; gap:18px; align-items:start; }
+  @media (max-width:980px){ .grid { grid-template-columns: 1fr } }
+
+  /* left panel */
+  .panel { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:16px; border-radius:14px; border:1px solid var(--glass-border); box-shadow: 0 6px 40px rgba(2,6,23,0.4); }
+  .panel h3 { margin:0 0 6px 0; font-size:15px }
+  .muted { color:var(--muted); font-size:13px }
+
+  /* uploader */
+  .uploader {
+    margin-top:12px; padding:16px; border-radius:12px; border:1px dashed rgba(255,255,255,0.04);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .12s ease;
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+  }
+  .uploader:hover { transform:translateY(-4px); box-shadow: 0 12px 40px rgba(2,6,23,0.45) }
+  .uploader.dragover { border-color: rgba(124,58,237,0.6); box-shadow: 0 12px 50px rgba(124,58,237,0.08) }
+
+  .upload-graphic { width:64px; height:64px; border-radius:10px; display:flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.02) }
+  .upload-graphic svg { width:40px; height:40px; opacity:0.95 }
+
+  .file-info { flex:1 }
+  .file-actions { display:flex; gap:8px }
+
+  /* file list */
+  .file-list { margin-top:12px; display:flex; flex-direction:column; gap:8px; max-height:220px; overflow:auto; padding-right:6px }
+  .file-item { display:flex; gap:10px; align-items:center; padding:8px; border-radius:10px; background: rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.02); transition: transform .12s ease }
+  .file-item:hover { transform: translateY(-6px) }
+  .file-meta { flex:1; display:flex; flex-direction:column }
+  .small { font-size:13px; color:var(--muted) }
+
+  /* right panel */
+  .dashboard { padding:16px; border-radius:14px; background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.008)); border:1px solid var(--glass-border); }
+  .kpis { display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap }
+  .kpi { padding:12px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); min-width:120px; text-align:center }
+  .kpi .num { font-size:18px; font-weight:800; color:#fff }
+
+  /* insights grid */
+  .insights { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:12px; margin-top:12px }
+  .insight-card { padding:12px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); border:1px solid rgba(255,255,255,0.02); transition: transform .14s }
+  .insight-card:hover { transform: translateY(-6px) }
+
+  /* charts */
+  .chart { width:100%; height:260px }
+
+  /* footer */
+  footer.pagefoot { margin-top:18px; text-align:center; color:var(--muted); font-size:13px }
+
+  /* animated floating blobs in hero */
+  .hero-art { position:relative; width:220px; height:72px; overflow:visible }
+  .blob { position:absolute; border-radius:50%; filter: blur(22px); opacity:0.9; transform: translateZ(0) }
+  .blob.one { width:120px; height:120px; left:-40px; top:-36px; background: linear-gradient(90deg, rgba(124,58,237,0.4), rgba(52,211,153,0.12)); animation: floaty 6s ease-in-out infinite }
+  .blob.two { width:80px; height:80px; right:-10px; top:-10px; background: linear-gradient(90deg, rgba(52,211,153,0.26), rgba(59,130,246,0.06)); animation: floaty 5s ease-in-out infinite reverse }
+  @keyframes floaty { 0% { transform: translateY(0) } 50% { transform: translateY(-12px) } 100% { transform: translateY(0) } }
+
+  /* animations for buttons */
+  .pulse { animation: pulse 2.6s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(124,58,237,0.12) } 70% { box-shadow: 0 0 0 18px rgba(124,58,237,0.02) } 100% { box-shadow: 0 0 0 0 rgba(124,58,237,0.02) } }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <header>
-      <div class="title">
-        <h1>AI Insights Lab — Epic UI</h1>
-        <div class="sub">Drag files, analyze, cluster, extract keywords & entities, visualize — zero-install.</div>
+    <!-- HERO / HEADER -->
+    <header class="hero">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <!-- stylized AI hexagon logo (SVG) -->
+          <svg viewBox="0 0 64 64" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0" x2="1">
+                <stop offset="0" stop-color="#7C3AED"/>
+                <stop offset="1" stop-color="#34D399"/>
+              </linearGradient>
+            </defs>
+            <rect x="6" y="6" width="52" height="52" rx="10" fill="url(#g1)"></rect>
+            <g transform="translate(10 10)" fill="white" opacity="0.96">
+              <path d="M9 4h18v4H9zM9 10h18v4H9zM9 16h18v4H9z" opacity="0.95"></path>
+            </g>
+          </svg>
+        </div>
+        <div class="title">
+          <h1>AI Insights Lab</h1>
+          <p class="muted">Turn documents into instant insights — beautiful, private, and fast.</p>
+        </div>
       </div>
 
       <div class="controls">
-        <div class="small">Mode</div>
-        <select id="mode">
+        <div class="hero-art" aria-hidden="true">
+          <div class="blob one"></div>
+          <div class="blob two"></div>
+        </div>
+
+        <select id="mode" class="select" title="Mode: Mock or Live">
           <option value="mock">Mock (offline)</option>
           <option value="live">Live (proxy)</option>
         </select>
 
-        <button id="themeToggle" class="theme-toggle">Light</button>
-        <button id="exportAll" class="btn">Export Report</button>
+        <button id="themeBtn" class="toggle" title="Toggle theme">Theme</button>
+        <button id="exportBtn" class="btn primary pulse" title="Export report">Export Report</button>
       </div>
     </header>
 
-    <section class="grid">
-      <aside class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:700">Data</div>
-          <div class="small" id="docCount">0 docs</div>
+    <main class="grid">
+      <!-- LEFT: Upload / Files -->
+      <section class="panel">
+        <h3>Upload Files</h3>
+        <div class="muted">Drop files here or click the area. Supported: <strong>.txt .csv .pdf</strong> — client-side only.</div>
+
+        <!-- uploader: supports click & drag -->
+        <label id="uploader" class="uploader" for="fileInput" tabindex="0">
+          <div class="upload-graphic" aria-hidden="true">
+            <!-- upload icon -->
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 5 17 10"></polyline>
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+            </svg>
+          </div>
+          <div class="file-info">
+            <div style="font-weight:700">Click to select or drag files here</div>
+            <div class="small">Max 8 files • Files stay in your browser • No upload to server in Mock mode</div>
+          </div>
+          <div class="file-actions">
+            <div class="small" id="quickCount">0 files</div>
+          </div>
+        </label>
+        <input id="fileInput" type="file" accept=".txt,.csv,.pdf" multiple style="display:none" />
+
+        <div class="file-list" id="fileList" role="list" aria-live="polite"></div>
+
+        <div style="display:flex; gap:8px; margin-top:12px">
+          <button id="analyzeBtn" class="btn primary">Analyze</button>
+          <button id="clearBtn" class="btn ghost">Clear</button>
         </div>
 
-        <div style="height:10px"></div>
-
-        <div id="uploader" class="uploader card">
-          <div style="font-weight:600">Drop .txt / .csv / .pdf</div>
-          <div class="small" style="margin-top:6px">Max 8 files, 2MB each (client-side)</div>
-          <input id="fileInput" type="file" multiple />
-        </div>
-
-        <ul class="docs" id="docList"></ul>
-
-        <div style="margin-top:10px">
-          <label class="small">Quick prompt</label>
-          <textarea id="prompt">Summarize key insights and list 3 action items.</textarea>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button id="analyzeBtn" class="btn">Analyze</button>
-            <button id="clusterBtn" class="btn ghost">Cluster</button>
+        <div style="margin-top:14px">
+          <div style="font-weight:700;margin-bottom:6px">Quick prompts</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn ghost template" data-prompt="Summarize key insights in 3 bullets">Summary</button>
+            <button class="btn ghost template" data-prompt="List top keywords and entities">Keywords</button>
+            <button class="btn ghost template" data-prompt="Detect overall sentiment and tone">Sentiment</button>
           </div>
         </div>
+      </section>
 
-        <div style="margin-top:12px">
-          <div style="font-weight:700;margin-bottom:8px">Quick templates</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn ghost template" data-p="Summarize in 3 bullets">Summary</button>
-            <button class="btn ghost template" data-p="List top keywords and entities">Keywords</button>
-            <button class="btn ghost template" data-p="Identify sentiment and tone">Sentiment</button>
-            <button class="btn ghost template" data-p="Produce action items and next steps">Action Items</button>
+      <!-- RIGHT: Dashboard -->
+      <section class="dashboard">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <div style="font-weight:800;font-size:18px">Insights Dashboard</div>
+            <div class="small">Interactive visualizations & cards — powered by in-browser analysis.</div>
           </div>
-        </div>
-      </aside>
-
-      <main>
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:700">Insights Dashboard</div>
+          <div style="display:flex;gap:10px;align-items:center">
             <div class="kpi">
-              <div class="item"><div class="small">Documents</div><div id="kDocs">0</div></div>
-              <div class="item"><div class="small">Clusters</div><div id="kClusters">0</div></div>
-              <div class="item"><div class="small">Keywords</div><div id="kKeywords">0</div></div>
-            </div>
-          </div>
-
-          <div style="margin-top:12px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-            <div style="flex:1;min-width:300px">
-              <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
-            </div>
-            <div style="width:320px">
-              <div style="font-weight:700">Document Viewer</div>
-              <div class="viewer" id="viewer">No document selected.</div>
-              <div style="margin-top:8px;display:flex;gap:8px">
-                <button id="prevDoc" class="btn ghost">Prev</button>
-                <button id="nextDoc" class="btn ghost">Next</button>
-                <button id="downloadDocs" class="btn ghost">Download CSV</button>
+              <div class="kpi" style="display:flex;gap:8px">
+                <div style="text-align:right">
+                  <div class="small">Documents</div>
+                  <div id="kDocs" class="num">0</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="small">Keywords</div>
+                  <div id="kKeywords" class="num">0</div>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div style="margin-top:12px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:700">Generated Insights</div>
-              <div class="small" id="insCount">0 cards</div>
+        <div style="margin-top:12px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:1; min-width:320px">
+            <div class="chart" id="keywordsChartWrap">
+              <canvas id="keywordsChart"></canvas>
             </div>
-
-            <div id="insights" class="insights-grid"></div>
           </div>
 
+          <div style="width:340px">
+            <div style="font-weight:700">Document Viewer</div>
+            <div style="margin-top:8px" class="panel" id="docViewer">No document selected — click a file to view preview.</div>
+            <div style="margin-top:8px; display:flex; gap:8px">
+              <button id="prevBtn" class="btn ghost">Prev</button>
+              <button id="nextBtn" class="btn ghost">Next</button>
+              <button id="exportCSV" class="btn ghost">Export CSV</button>
+            </div>
+          </div>
         </div>
 
-        <div style="height:14px"></div>
-
-        <div class="card">
+        <div style="margin-top:14px">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-weight:700">Embeddings / Clusters (mock)</div>
-            <div class="small">Interactive scatter (click to focus)</div>
+            <div style="font-weight:700">Generated Insights</div>
+            <div class="small" id="insCount">0 cards</div>
           </div>
-          <canvas id="scatter" style="width:100%;height:380px;margin-top:12px"></canvas>
+
+          <div class="insights" id="insightsGrid" aria-live="polite" style="margin-top:12px"></div>
         </div>
+      </section>
+    </main>
 
-      </main>
-    </section>
-
-    <footer>© AI Insights Lab — Static demo. Optional: deploy server for Live model calls (Railway recommended).</footer>
+    <footer class="pagefoot">Made with ❤️ — AI Insights Lab • Mock mode works fully offline in your browser.</footer>
   </div>
 
 <script>
-/* ============================
-   EXPLANATION (brief)
-   - This file is a full single-file web app.
-   - All analysis runs client-side in "Mock" mode (no APIs required).
-   - Optional "Live" mode will POST to a server proxy you deploy (instructions provided).
-   - The app includes: file upload (txt/csv/pdf), pdf text extraction (pdf.js),
-     keyword extraction (TF-IDF), clustering (k-means), sentiment (small lexicon),
-     interactive charts (Chart.js), export functions, theme toggle.
-   ============================*/
+/* -------------------------------------------
+   EPIC FRONTEND SCRIPT
+   - click + drag uploader
+   - pdf text extraction (pdf.js)
+   - mock analysis (TF-IDF-like keywords + simple sentiment)
+   - charts (Chart.js)
+   - interactive UI interactions and animations
+   -------------------------------------------*/
 
-/* CONFIG */
-const WORKER_BASE_URL = '' // optional: set to your deployed proxy URL if you enable Live mode
+const fileInput = document.getElementById('fileInput');
+const uploader = document.getElementById('uploader');
+const fileList = document.getElementById('fileList');
+const quickCount = document.getElementById('quickCount');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const clearBtn = document.getElementById('clearBtn');
+const insightsGrid = document.getElementById('insightsGrid');
+const kDocs = document.getElementById('kDocs');
+const kKeywords = document.getElementById('kKeywords');
+const docViewer = document.getElementById('docViewer');
+const insCount = document.getElementById('insCount');
+const exportBtn = document.getElementById('exportBtn');
+const exportCSV = document.getElementById('exportCSV');
+const themeBtn = document.getElementById('themeBtn');
+const modeSelect = document.getElementById('mode');
 
-/* STATE */
-let DOCUMENTS = [] // {id,name,type,text}
-let currentIndex = 0
-let CLUSTERS = []
-let TFIDF_KEYWORDS = []
-let CHART_LINE, CHART_SCATTER
+let DOCUMENTS = []; // {id,name,type,text}
+let currentIndex = -1;
+let keywordsChart = null;
 
-/* UTILITIES */
-const el = id => document.getElementById(id)
-const downloadBlob = (content, name, type='application/json') => {
-  const blob = new Blob([content], {type})
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click()
-}
+/* Utilities */
+function id(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8) }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'})[c]) }
 
 /* PDF extraction using pdf.js */
 async function extractPdfText(file){
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise
-  let text = ''
-  for(let i=1;i<=pdf.numPages;i++){
-    const page = await pdf.getPage(i)
-    const txtContent = await page.getTextContent()
-    const strings = txtContent.items.map(it => it.str)
-    text += strings.join(' ') + '\\n'
+  try{
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+    let txt = '';
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map(it=>it.str);
+      txt += strings.join(' ') + '\\n';
+    }
+    return txt;
+  }catch(e){
+    console.warn('PDF parse failed', e);
+    return '';
   }
-  return text
 }
 
-/* Read files */
-async function handleFiles(files){
-  const arr = Array.from(files).slice(0,8)
-  for(const f of arr){
+/* Handle files (click or drop) */
+async function handleFiles(fileListObj){
+  const list = Array.from(fileListObj).slice(0,8); // limit 8
+  for(const f of list){
     try{
-      let text=''
+      let text = '';
       if(f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')){
-        text = await extractPdfText(f)
+        text = await extractPdfText(f);
+        if(!text) text = '(PDF plaintext could not be extracted)';
       } else {
-        text = await f.text()
+        text = await f.text();
       }
-      DOCUMENTS.push({id:Date.now()+Math.random(), name:f.name, type:f.type || 'text', text})
-    }catch(e){
-      console.warn('file skipped', f.name, e)
-    }
-  }
-  renderDocList()
-  updateKPI()
-}
-
-/* Render documents list */
-function renderDocList(){
-  const ul = el('docList')
-  ul.innerHTML = ''
-  DOCUMENTS.forEach((d,i)=>{
-    const li = document.createElement('li')
-    li.innerHTML = `<div style="flex:1"><strong>${escapeHtml(d.name)}</strong><div class="small">${(d.text||'').slice(0,120).replace(/\\n/g,' ')}${d.text.length>120?'...':''}</div></div>
-                    <div style="display:flex;gap:6px"><button class="btn ghost" data-i="${i}" onclick="selectDoc(${i})">Open</button>
-                    <button class="btn ghost" onclick="removeDoc(${i})">Remove</button></div>`
-    ul.appendChild(li)
-  })
-  el('docCount').textContent = `${DOCUMENTS.length} docs`
-  el('kDocs').textContent = DOCUMENTS.length
-  if(DOCUMENTS.length && currentIndex >= DOCUMENTS.length) currentIndex = DOCUMENTS.length-1
-  if(DOCUMENTS.length===0) el('viewer').innerText = 'No document selected.'
-}
-
-/* select doc */
-function selectDoc(i){
-  currentIndex = i
-  el('viewer').innerText = DOCUMENTS[i].text.slice(0,10000)
-}
-
-/* remove doc */
-function removeDoc(i){
-  DOCUMENTS.splice(i,1)
-  renderDocList()
-  updateKPI()
-}
-
-/* simple escapeHtml */
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'})[c]) }
-
-/* =========================
-   Text processing: TF-IDF, top keywords
-   ========================= */
-
-function tokenize(s){
-  return s.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(Boolean).map(t => t.trim()).filter(t=>t.length>2)
-}
-
-function computeTFIDF(docs){
-  // docs: array of strings
-  const tfs = docs.map(text => {
-    const tk = tokenize(text)
-    const tf = {}
-    tk.forEach(w => tf[w] = (tf[w]||0)+1)
-    const len = tk.length || 1
-    Object.keys(tf).forEach(k=>tf[k] = tf[k]/len)
-    return tf
-  })
-  const df = {}
-  tfs.forEach(tf => Object.keys(tf).forEach(k => df[k] = (df[k]||0) + 1))
-  const N = docs.length || 1
-  const idf = {}
-  Object.keys(df).forEach(k => idf[k] = Math.log(1 + N / df[k]))
-  const tfidf = tfs.map(tf => {
-    const out = {}
-    Object.keys(tf).forEach(k => out[k] = tf[k] * (idf[k]||1))
-    return out
-  })
-  // Aggregate top terms
-  const agg = {}
-  tfidf.forEach(obj => Object.entries(obj).forEach(([k,v]) => agg[k] = (agg[k]||0)+v))
-  const top = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,30).map(x=>x[0])
-  return {tfidf, idf, top}
-}
-
-/* quick KMeans 2D (use TF-IDF top words as feature vector projection simplified) */
-function simpleKMeans(docVectors, k = 3, iterations = 20){
-  // docVectors: array of arrays (length M)
-  const n = docVectors.length
-  if(n===0) return []
-  const dim = docVectors[0].length
-  // init centroids randomly
-  const centroids = []
-  for(let i=0;i<k;i++){
-    centroids.push(docVectors[Math.floor(Math.random()*n)].slice())
-  }
-  let assignments = new Array(n).fill(0)
-  for(let it=0; it<iterations; it++){
-    // assign
-    for(let i=0;i<n;i++){
-      let best=0, bestd=Infinity
-      for(let j=0;j<k;j++){
-        let d=0
-        for(let m=0;m<dim;m++){
-          const diff = (docVectors[i][m]||0) - (centroids[j][m]||0)
-          d += diff*diff
-        }
-        if(d<bestd){ bestd=d; best=j }
-      }
-      assignments[i]=best
-    }
-    // update centroids
-    const sums = Array.from({length:k}, ()=>Array.from({length:dim}, ()=>0))
-    const counts = new Array(k).fill(0)
-    for(let i=0;i<n;i++){
-      const a = assignments[i]; counts[a]++
-      for(let m=0;m<dim;m++) sums[a][m] += docVectors[i][m]||0
-    }
-    for(let j=0;j<k;j++){
-      if(counts[j]===0) continue
-      for(let m=0;m<dim;m++) centroids[j][m] = sums[j][m]/counts[j]
-    }
-  }
-  return assignments
-}
-
-/* project doc TF-IDF into 2D by simple PCA-like projection using top keywords */
-function docVectorsFromTfidf(tfidfObjs, topTerms){
-  return tfidfObjs.map(tfobj => topTerms.map(t => tfobj[t]||0))
-}
-
-/* SENTIMENT - tiny lexicon */
-const SENT_LEX = {
-  'good':2,'great':3,'excellent':3,'positive':2,'happy':2,'improve':1,'improved':1,
-  'bad':-2,'poor':-2,'negative':-2,'problem':-2,'issue':-2,'risk':-2,'fail':-3
-}
-function scoreSentiment(text){
-  const tk = tokenize(text)
-  let score=0
-  tk.forEach(w=>{ if(SENT_LEX[w]) score += SENT_LEX[w] })
-  return score
-}
-
-/* ==============
-   CHARTS
-   ============== */
-function initCharts(){
-  const lineCtx = el('lineChart').getContext('2d')
-  CHART_LINE = new Chart(lineCtx, {
-    type: 'bar',
-    data: {labels:['A','B','C'], datasets:[{label:'Top keywords', data:[1,2,3], backgroundColor:'rgba(124,58,237,0.9)'}]},
-    options:{plugins:{legend:{display:false}}}
-  })
-  const scatterCtx = el('scatter').getContext('2d')
-  CHART_SCATTER = new Chart(scatterCtx, {
-    type:'bubble',
-    data:{datasets:[]},
-    options:{
-      scales:{x:{min:-1,max:10},y:{min:-1,max:10}},
-      plugins:{legend:{display:false}}
-    }
-  })
-}
-initCharts()
-
-/* render insights cards */
-function renderInsights(insArray){
-  const cont = el('insights')
-  cont.innerHTML = ''
-  insArray.forEach(item=>{
-    const d = document.createElement('div'); d.className='insight'
-    d.innerHTML = `<strong>${escapeHtml(item.title)}</strong><div class="small" style="margin-top:6px">${escapeHtml(item.text)}</div>`
-    cont.appendChild(d)
-  })
-  el('insCount').textContent = insArray.length
-}
-
-/* update KPI */
-function updateKPI(){
-  el('kDocs').textContent = DOCUMENTS.length
-  el('kClusters').textContent = CLUSTERS.length || 0
-  el('kKeywords').textContent = TFIDF_KEYWORDS.length
-}
-
-/* analyze: runs mock (client-side) or live if configured */
-async function analyze(prompt){
-  if((el('mode').value === 'live') && WORKER_BASE_URL){
-    // Live mode: send to proxy. Proxy should accept {documents, prompt} and return {insights, chart, scatterPoints}
-    try{
-      const resp = await fetch(WORKER_BASE_URL + '/analyze', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({documents: DOCUMENTS.map(d=>({name:d.name,text:d.text})), prompt})
-      })
-      if(!resp.ok) throw new Error('Proxy failure: ' + resp.status)
-      const json = await resp.json()
-      renderInsights(json.insights || [])
-      if(json.chart) {
-        CHART_LINE.data.labels = json.chart.labels
-        CHART_LINE.data.datasets[0].data = json.chart.data
-        CHART_LINE.update()
-      }
-      if(json.scatterPoints){
-        CHART_SCATTER.data.datasets = [{data: json.scatterPoints.map(p=>({x:p[0], y:p[1], r:6}))}]
-        CHART_SCATTER.update()
-      }
-      el('insCount').textContent = (json.insights || []).length
-      return
+      DOCUMENTS.push({ id: id(), name: f.name, type: f.type || 'text', text });
     }catch(err){
-      console.warn('Live failed', err); alert('Live failed — falling back to mock analysis')
+      console.warn('skip file', f.name, err);
     }
   }
-
-  // Mock analysis client-side:
-  const docsText = DOCUMENTS.map(d=>d.text)
-  // TF-IDF
-  const {tfidf, idf, top} = computeTFIDF(docsText)
-  TFIDF_KEYWORDS = top.slice(0,20)
-  // Prepare insights
-  const insights = []
-  // summary: naive excerpt + top
-  const combined = docsText.join('\\n').slice(0,4000)
-  const summary = combined.length>160 ? combined.slice(0,600) + '...' : combined
-  insights.push({title:'Summary (mock)', text: (prompt || 'Summary') + '\\n' + summary.slice(0,800)})
-  insights.push({title:'Top keywords', text: TFIDF_KEYWORDS.join(', ') || 'N/A'})
-  // sentiment per doc
-  const sentiList = DOCUMENTS.map(d => ({name:d.name, score: scoreSentiment(d.text)}))
-  const sentiText = sentiList.map(s => `${s.name}: ${s.score>=2?'Positive': s.score>=0?'Neutral':'Negative'} (${s.score})`).join('\\n')
-  insights.push({title:'Sentiment (mock)', text: sentiText})
-  insights.push({title:'Action items', text: '1) Review top keywords weekly\\n2) Investigate negative sentiment docs\\n3) Run live model for deeper summarization'})
-
-  renderInsights(insights)
-
-  // Chart data for top keywords counts
-  const topCounts = top.slice(0,8).map(t => {
-    let count = 0
-    DOCUMENTS.forEach(d => { const tk = tokenize(d.text); tk.forEach(w=>{ if(w===t) count++ }) })
-    return {label:t, count}
-  })
-  CHART_LINE.data.labels = topCounts.map(x=>x.label)
-  CHART_LINE.data.datasets[0].data = topCounts.map(x=>x.count)
-  CHART_LINE.update()
-
-  // Clustering: create doc vectors from tfidf top terms -> simple kmeans
-  const docVectors = docVectorsFromTfidf(tfidf, top.slice(0,8))
-  const k = Math.min(4, Math.max(1, Math.round(Math.sqrt(DOCUMENTS.length||1))))
-  const assignments = simpleKMeans(docVectors, k, 30)
-  CLUSTERS = []
-  for(let i=0;i<k;i++) CLUSTERS.push([])
-  assignments.forEach((c,i) => CLUSTERS[c].push(i))
-
-  // prepare scatter points (2D projection: use first two dimensions or simple PCA)
-  const scatterPoints = docVectors.map((v,i) => {
-    // reduce to 2D by first two coords or sum of halves
-    const x = v[0] || 0
-    const y = v[1] || v.slice(0,4).reduce((a,b)=>a+b,0)/4 || 0
-    return {x: x*10 + (Math.random()-0.5), y: y*10 + (Math.random()-0.5), cluster: assignments[i], label: DOCUMENTS[i].name}
-  })
-  CHART_SCATTER.data.datasets = []
-  for(let c=0;c<Math.max(1,k);c++){
-    const ds = scatterPoints.filter(p=>p.cluster===c).map(p=>({x:p.x,y:p.y,r:8}))
-    CHART_SCATTER.data.datasets.push({label:'cluster'+c, data:ds})
-  }
-  CHART_SCATTER.update()
-
-  // render cluster counts
-  el('kClusters').textContent = CLUSTERS.length
-  el('kKeywords').textContent = TFIDF_KEYWORDS.length
-  el('insCount').textContent = insights.length
+  renderFileList();
+  updateKPIs();
 }
 
-/* ===========================
-   UI wiring
-   ===========================*/
-const fileInput = el('fileInput')
-const uploader = el('uploader')
-
-uploader.addEventListener('click', ()=>fileInput.click())
-fileInput.addEventListener('change', (e)=>handleFiles(e.target.files))
-
-// drag & drop
-uploader.addEventListener('dragover', (e)=>{e.preventDefault(); uploader.style.opacity=0.85})
-uploader.addEventListener('dragleave', ()=>{uploader.style.opacity=1})
-uploader.addEventListener('drop', (e)=>{e.preventDefault(); uploader.style.opacity=1; handleFiles(e.dataTransfer.files)})
-
-el('analyzeBtn').addEventListener('click', ()=>analyze(el('prompt').value))
-el('clusterBtn').addEventListener('click', ()=>analyze(el('prompt').value))
-document.querySelectorAll('.template').forEach(b => b.addEventListener('click', (ev)=> el('prompt').value = ev.currentTarget.dataset.p))
-
-// prev/next
-el('prevDoc').addEventListener('click', ()=> {
-  if(DOCUMENTS.length===0) return
-  currentIndex = Math.max(0, currentIndex-1)
-  selectDoc(currentIndex)
-})
-el('nextDoc').addEventListener('click', ()=> {
-  if(DOCUMENTS.length===0) return
-  currentIndex = Math.min(DOCUMENTS.length-1, currentIndex+1)
-  selectDoc(currentIndex)
-})
-
-el('downloadDocs').addEventListener('click', ()=> {
-  const rows = [['name','text']]
-  DOCUMENTS.forEach(d => rows.push([d.name, d.text.replace(/\\n/g,' ') ]))
-  const csv = rows.map(r=>`"${r[0].replace(/\"/g,'\"\"')}","${r[1].replace(/\"/g,'\"\"')}"`).join('\\n')
-  downloadBlob(csv, 'documents.csv', 'text/csv')
-})
-
-el('exportAll').addEventListener('click', ()=> {
-  const payload = {
-    meta: {timestamp: new Date().toISOString()},
-    documents: DOCUMENTS,
-    insights: Array.from(document.querySelectorAll('.insight')).map(n => ({title: n.querySelector('strong').innerText, text: n.querySelector('.small') ? n.querySelector('.small').innerText : ''})),
-    clusters: CLUSTERS
-  }
-  downloadBlob(JSON.stringify(payload, null, 2), 'ai-insights-report.json', 'application/json')
-})
-
-function selectDoc(i){
-  currentIndex = i
-  el('viewer').innerText = DOCUMENTS[i].text.slice(0, 100000)
+/* File list rendering */
+function renderFileList(){
+  fileList.innerHTML = '';
+  DOCUMENTS.forEach((d, idx) => {
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.innerHTML = `
+      <div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));display:flex;align-items:center;justify-content:center;font-weight:700">
+        ${escapeHtml(d.name.split('.').pop().toUpperCase())}
+      </div>
+      <div class="file-meta">
+        <div style="font-weight:600">${escapeHtml(d.name)}</div>
+        <div class="small">${escapeHtml(d.text.slice(0,120).replace(/\\n/g,' '))}${d.text.length>120?'...':''}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" title="Preview" onclick="window.__preview(${idx})">Preview</button>
+        <button class="btn ghost" title="Remove" onclick="window.__remove(${idx})">Remove</button>
+      </div>
+    `;
+    fileList.appendChild(item);
+  });
+  quickCount.textContent = `${DOCUMENTS.length} files`;
 }
 
-// remove doc action from HTML-generated button uses window scope
-window.selectDoc = selectDoc
-window.removeDoc = function(i){ DOCUMENTS.splice(i,1); renderDocList(); updateKPI() }
+/* preview and remove for global access (from inline onclicks) */
+window.__preview = function(i){
+  currentIndex = i;
+  docViewer.innerText = DOCUMENTS[i].text.slice(0, 20000);
+};
+window.__remove = function(i){
+  DOCUMENTS.splice(i,1);
+  if(currentIndex === i) {
+    docViewer.innerText = 'No document selected — click a file to view preview.';
+    currentIndex = -1;
+  }
+  renderFileList();
+  updateKPIs();
+};
 
-el('themeToggle').addEventListener('click', ()=>{
-  const btn = el('themeToggle')
-  if(btn.innerText === 'Light'){
-    document.body.style.background = 'linear-gradient(180deg,#f7fafc,#e6eef8)'
-    document.body.style.color = '#0b1220'
-    btn.innerText = 'Dark'
+/* Drag & drop UX */
+uploader.addEventListener('dragover', (e)=>{ e.preventDefault(); uploader.classList.add('dragover') });
+uploader.addEventListener('dragleave', ()=>{ uploader.classList.remove('dragover') });
+uploader.addEventListener('drop', (e)=>{ e.preventDefault(); uploader.classList.remove('dragover'); handleFiles(e.dataTransfer.files) });
+fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
+
+/* KPIs */
+function updateKPIs(){
+  kDocs.innerText = DOCUMENTS.length;
+}
+
+/* SIMPLE TEXT PROCESSING: tokenize, TF-like frequency */
+function tokenize(s){
+  return s.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(Boolean).map(t=>t.trim()).filter(t=>t.length>2);
+}
+
+function topKeywords(docs, topN=10){
+  const freq = {};
+  docs.forEach(t=>{
+    tokenize(t).forEach(w=>freq[w] = (freq[w]||0) + 1);
+  });
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,topN).map(x=>({k:x[0],v:x[1]}));
+}
+
+/* SENTIMENT (tiny lexicon) */
+const SENT = { good:2, great:3, excellent:3, positive:2, happy:2, improve:1, improved:1, bad:-2, poor:-2, negative:-2, problem:-2, risk:-2, fail:-3 };
+
+function sentimentScore(text){
+  let s = 0;
+  tokenize(text).forEach(w => { if(SENT[w]) s += SENT[w]; });
+  return s;
+}
+
+/* CHART: render keywords bar chart */
+function renderKeywordsChart(klist){
+  const ctx = document.getElementById('keywordsChart').getContext('2d');
+  const labels = klist.map(x=>x.k);
+  const data = klist.map(x=>x.v);
+  if(keywordsChart) {
+    keywordsChart.data.labels = labels;
+    keywordsChart.data.datasets[0].data = data;
+    keywordsChart.update();
+    return;
+  }
+  keywordsChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Mentions', data, backgroundColor: Array.from({length:labels.length}).map((_,i)=>`rgba(124,58,237,${0.9 - i*0.08})`) }] },
+    options: { responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+  });
+}
+
+/* ANALYZE (mock) */
+function analyzeMock(prompt){
+  const texts = DOCUMENTS.map(d=>d.text);
+  const combined = texts.join('\\n') || 'No documents provided.';
+  const kw = topKeywords(texts, 8);
+  renderKeywordsChart(kw);
+  kKeywords.innerText = kw.length;
+
+  // simple insights
+  const insights = [];
+  insights.push({ title: 'Summary (mock)', text: combined.slice(0,600) + (combined.length>600 ? '...' : '') });
+  insights.push({ title: 'Top keywords', text: kw.map(x=>x.k).join(', ') || 'N/A' });
+
+  const senti = DOCUMENTS.map(d=> ({name:d.name,score: sentimentScore(d.text)} ));
+  const sentiText = senti.map(s => `${s.name}: ${s.score >= 2 ? 'Positive' : s.score >= 0 ? 'Neutral' : 'Negative'} (${s.score})`).join('\\n');
+  insights.push({ title: 'Sentiment (mock)', text: sentiText || 'No content' });
+  insights.push({ title: 'Action items', text: '1) Monitor top keywords weekly\\n2) Review negative documents for issues\\n3) Run live summarization for deeper insights' });
+
+  renderInsights(insights);
+}
+
+/* Render insights cards */
+function renderInsights(items){
+  insightsGrid.innerHTML = '';
+  items.forEach(it=>{
+    const card = document.createElement('div');
+    card.className = 'insight-card';
+    card.innerHTML = `<strong>${escapeHtml(it.title)}</strong><div class="small" style="margin-top:8px; white-space:pre-wrap">${escapeHtml(it.text)}</div>`;
+    insightsGrid.appendChild(card);
+  });
+  insCount.innerText = items.length;
+}
+
+/* wired analyze button */
+analyzeBtn.addEventListener('click', async ()=>{
+  if(DOCUMENTS.length === 0){ alert('Please upload at least one document first.'); return; }
+  if(modeSelect.value === 'live'){
+    // live mode placeholder: since we are not requiring a server here, show a message and fallback to mock
+    const proceed = confirm('Live mode requires a deployed proxy server. Click OK to attempt (frontend will try to POST), or Cancel to run mock analysis.');
+    if(!proceed){ analyzeMock(); return; }
+    // If user proceeds, try to POST to /analyze relative path (user may have deployed server elsewhere)
+    try {
+      const resp = await fetch('/analyze', {
+        method:'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ documents: DOCUMENTS.map(d=>({name:d.name,text:d.text})), prompt: '' })
+      });
+      if(!resp.ok) throw new Error('Server error ' + resp.status);
+      const json = await resp.json();
+      if(json.chart && json.chart.labels){
+        renderKeywordsChart(json.chart.labels.map((lab,i)=>({k: lab, v: json.chart.data[i] || 1})));
+      }
+      renderInsights(json.insights || []);
+    } catch(err){
+      console.warn('Live call failed', err);
+      alert('Live analysis failed — falling back to mock. (See console for details.)');
+      analyzeMock();
+    }
   } else {
-    document.body.style.background = 'linear-gradient(180deg,#041022,#07122b)'
-    document.body.style.color = '#e9f2fb'
-    btn.innerText = 'Light'
+    analyzeMock(document.getElementById('prompt').value);
   }
-})
+});
 
-/* initial */
-renderDocList()
-updateKPI()
+/* CLEAR */
+clearBtn.addEventListener('click', ()=> {
+  if(!confirm('Clear all uploaded files and results?')) return;
+  DOCUMENTS = []; currentIndex = -1; fileList.innerHTML=''; quickCount.innerText='0 files'; docViewer.innerText='No document selected — click a file to view preview.'; insightsGrid.innerHTML=''; if(keywordsChart){ keywordsChart.data.labels = []; keywordsChart.data.datasets[0].data = []; keywordsChart.update(); } kDocs.innerText='0'; kKeywords.innerText='0'; insCount.innerText='0';
+});
+
+/* EXPORT JSON REPORT */
+exportBtn.addEventListener('click', ()=>{
+  const payload = { meta: {ts: (new Date()).toISOString()}, docs: DOCUMENTS, insights: Array.from(document.querySelectorAll('.insight-card')).map(n=>({title:n.querySelector('strong').innerText, text:n.querySelector('.small').innerText})) };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ai-insights-report.json'; a.click();
+});
+
+/* EXPORT CSV of docs */
+exportCSV.addEventListener('click', ()=>{
+  if(DOCUMENTS.length === 0){ alert('No documents to export.'); return; }
+  const rows = [['name','text']];
+  DOCUMENTS.forEach(d => rows.push([d.name, d.text.replace(/\\n/g,' ').slice(0,200)]));
+  const csv = rows.map(r => `\"${r[0].replace(/\"/g,'\"\"')}\",\"${r[1].replace(/\"/g,'\"\"')}\"`).join('\\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'documents.csv'; a.click();
+});
+
+/* TEMPLATE BUTTONS */
+document.querySelectorAll('.template').forEach(btn => btn.addEventListener('click', (e)=>{
+  const p = e.currentTarget.getAttribute('data-prompt') || '';
+  // insert prompt into a quick inlined prompt input area — we will reuse analyze button only, so show a prompt modal via alert (brief)
+  if(confirm('Set prompt to: \"' + p + '\" and run analysis?')) {
+    analyzeMock(p);
+  }
+}));
+
+/* THEME toggle (light / dark) */
+themeBtn.addEventListener('click', ()=>{
+  if(document.documentElement.style.getPropertyValue('--light') === '1'){
+    // switch to dark
+    document.documentElement.style.removeProperty('--light');
+    document.body.style.background = 'radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent), radial-gradient(900px 400px at 90% 85%, rgba(52,211,153,0.06), transparent), linear-gradient(180deg,#071122,#071b2c)';
+    themeBtn.innerText = 'Theme';
+  } else {
+    // light theme
+    document.documentElement.style.setProperty('--light','1');
+    document.body.style.background = 'linear-gradient(180deg,#f7fafc,#e6eef8)';
+    document.body.style.color = '#091024';
+    themeBtn.innerText = 'Dark';
+  }
+});
+
+/* initial tiny demo populate (sample doc) */
+(function seedDemo(){
+  const exampleText = `AI Insights Lab — Demo document.
+This is a short demo document used to show the UI. It mentions AI, insights, analysis, and dashboards.
+Use the upload area to add more files.`;
+  DOCUMENTS.push({ id:id(), name:'demo-note.txt', type:'text', text: exampleText });
+  renderFileList();
+  updateKPIs();
+})();
+
+/* update UI KPIs */
+function updateKPIs(){
+  kDocs.innerText = DOCUMENTS.length;
+}
+
+/* helper: update after adding files */
+function renderFileList(){ /* redefined earlier so ensure it's the one used */; }
+renderFileList = renderFileList || (()=>{}); // guard
+
+// Re-assign the renderFileList reference to the real function if missing (ensures seed works)
+if(typeof renderFileList !== 'function' || renderFileList.toString().indexOf('fileList') === -1){
+  // the actual function defined earlier has proper behavior; re-define simple fallback
+  renderFileList = function(){
+    fileList.innerHTML = '';
+    DOCUMENTS.forEach((d, idx) => {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.innerHTML = `<div style="width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center">${escapeHtml(d.name.split('.').pop().toUpperCase())}</div>
+      <div class="file-meta"><div style="font-weight:600">${escapeHtml(d.name)}</div><div class="small">${escapeHtml(d.text.slice(0,120).replace(/\\n/g,' '))}${d.text.length>120?'...':''}</div></div>
+      <div style="display:flex;gap:8px"><button class="btn ghost" onclick="window.__preview(${idx})">Preview</button><button class="btn ghost" onclick="window.__remove(${idx})">Remove</button></div>`;
+      fileList.appendChild(item);
+    });
+    quickCount.textContent = `${DOCUMENTS.length} files`;
+  };
+  renderFileList();
+}
+
+/* ensure charts initial empty state */
+renderKeywordsChart([]);
 
 </script>
 </body>
