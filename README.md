@@ -1,6 +1,6 @@
 # AI Systems Insights Lab
 
-![Banner](assets/banner.svg)
+![Banner](assets/brain.svg)
 
 **Author:** Riya Jain: AI & Big Data  
 **Live demo:** https://<RiyaJ6>.github.io/AI-Systems-Insights-Lab  
