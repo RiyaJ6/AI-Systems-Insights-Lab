@@ -1,69 +1,549 @@
-// server.js - Node/Express proxy for Live mode (Railway)
-const express = require('express')
-const fetch = require('node-fetch') // railway's node image supports node 18+; otherwise install node-fetch
-const bodyParser = require('body-parser')
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Insights Lab — Epic UI</title>
 
-const app = express()
-app.use(bodyParser.json({limit:'5mb'}))
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- PDF.js for PDF text extraction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
 
-const HF_MODEL = process.env.HF_MODEL || 'google/flan-t5-small' // light model
-const HF_TOKEN = process.env.HF_TOKEN // set as Railway secret
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap">
 
-app.get('/', (req,res)=> res.send('AI Insights Proxy alive'))
+<style>
+  :root{
+    --bg:#07122b; --surface:#0f2338; --muted:#98a6b3; --accent:#7c3aed; --glass: rgba(255,255,255,0.03);
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:linear-gradient(180deg,#041022,#07122b);color:#e9f2fb}
+  .wrap{max-width:1200px;margin:28px auto;padding:20px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
+  .title{display:flex;flex-direction:column}
+  h1{margin:0;font-size:20px}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--accent);color:white;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.05);color:var(--muted)}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:14px;border-radius:12px}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:18px}
+  .uploader{border:2px dashed var(--glass);padding:12px;text-align:center;border-radius:10px;cursor:pointer}
+  input[type=file]{display:none}
+  .small{font-size:13px;color:var(--muted)}
+  textarea{width:100%;min-height:80px;background:transparent;border-radius:8px;padding:10px;border:1px solid rgba(255,255,255,0.04);color:inherit}
+  .docs{margin:8px 0;padding:0;list-style:none}
+  .docs li{padding:8px;border-radius:8px;background:rgba(255,255,255,0.01);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .insights-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+  .insight{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));border:1px solid rgba(255,255,255,0.02)}
+  .row{display:flex;gap:8px;align-items:center}
+  .chart-wrap{height:220px}
+  .viewer{height:210px;overflow:auto;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:rgba(0,0,0,0.15)}
+  .kpi{display:flex;gap:12px}
+  .kpi .item{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;min-width:110px;text-align:center}
+  .theme-toggle{padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:var(--muted)}
+  footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>AI Insights Lab — Epic UI</h1>
+        <div class="sub">Drag files, analyze, cluster, extract keywords & entities, visualize — zero-install.</div>
+      </div>
 
-app.post('/analyze', async (req,res) => {
-  try{
-    if(!HF_TOKEN) return res.status(500).json({error:'HF_TOKEN not configured'})
+      <div class="controls">
+        <div class="small">Mode</div>
+        <select id="mode">
+          <option value="mock">Mock (offline)</option>
+          <option value="live">Live (proxy)</option>
+        </select>
 
-    const { documents = [], prompt = 'Summarize' } = req.body
-    const text = documents.map(d => `FILE: ${d.name}\\n${d.text}`).join('\\n\\n')
-    const modelInput = `${prompt}\\n\\n${text}`.slice(0, 20000) // avoid very long input
+        <button id="themeToggle" class="theme-toggle">Light</button>
+        <button id="exportAll" class="btn">Export Report</button>
+      </div>
+    </header>
 
-    // call Hugging Face Inference API
-    const hfResp = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ inputs: modelInput, options:{wait_for_model:true, use_cache:false}, parameters:{max_new_tokens:300} })
-    })
+    <section class="grid">
+      <aside class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:700">Data</div>
+          <div class="small" id="docCount">0 docs</div>
+        </div>
 
-    if(!hfResp.ok){
-      const txt = await hfResp.text().catch(()=>'<no-body>')
-      return res.status(502).json({error:'HF inference failed', details: txt})
+        <div style="height:10px"></div>
+
+        <div id="uploader" class="uploader card">
+          <div style="font-weight:600">Drop .txt / .csv / .pdf</div>
+          <div class="small" style="margin-top:6px">Max 8 files, 2MB each (client-side)</div>
+          <input id="fileInput" type="file" multiple />
+        </div>
+
+        <ul class="docs" id="docList"></ul>
+
+        <div style="margin-top:10px">
+          <label class="small">Quick prompt</label>
+          <textarea id="prompt">Summarize key insights and list 3 action items.</textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button id="analyzeBtn" class="btn">Analyze</button>
+            <button id="clusterBtn" class="btn ghost">Cluster</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div style="font-weight:700;margin-bottom:8px">Quick templates</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn ghost template" data-p="Summarize in 3 bullets">Summary</button>
+            <button class="btn ghost template" data-p="List top keywords and entities">Keywords</button>
+            <button class="btn ghost template" data-p="Identify sentiment and tone">Sentiment</button>
+            <button class="btn ghost template" data-p="Produce action items and next steps">Action Items</button>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Insights Dashboard</div>
+            <div class="kpi">
+              <div class="item"><div class="small">Documents</div><div id="kDocs">0</div></div>
+              <div class="item"><div class="small">Clusters</div><div id="kClusters">0</div></div>
+              <div class="item"><div class="small">Keywords</div><div id="kKeywords">0</div></div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:300px">
+              <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+            </div>
+            <div style="width:320px">
+              <div style="font-weight:700">Document Viewer</div>
+              <div class="viewer" id="viewer">No document selected.</div>
+              <div style="margin-top:8px;display:flex;gap:8px">
+                <button id="prevDoc" class="btn ghost">Prev</button>
+                <button id="nextDoc" class="btn ghost">Next</button>
+                <button id="downloadDocs" class="btn ghost">Download CSV</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700">Generated Insights</div>
+              <div class="small" id="insCount">0 cards</div>
+            </div>
+
+            <div id="insights" class="insights-grid"></div>
+          </div>
+
+        </div>
+
+        <div style="height:14px"></div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Embeddings / Clusters (mock)</div>
+            <div class="small">Interactive scatter (click to focus)</div>
+          </div>
+          <canvas id="scatter" style="width:100%;height:380px;margin-top:12px"></canvas>
+        </div>
+
+      </main>
+    </section>
+
+    <footer>© AI Insights Lab — Static demo. Optional: deploy server for Live model calls (Railway recommended).</footer>
+  </div>
+
+<script>
+/* ============================
+   EXPLANATION (brief)
+   - This file is a full single-file web app.
+   - All analysis runs client-side in "Mock" mode (no APIs required).
+   - Optional "Live" mode will POST to a server proxy you deploy (instructions provided).
+   - The app includes: file upload (txt/csv/pdf), pdf text extraction (pdf.js),
+     keyword extraction (TF-IDF), clustering (k-means), sentiment (small lexicon),
+     interactive charts (Chart.js), export functions, theme toggle.
+   ============================*/
+
+/* CONFIG */
+const WORKER_BASE_URL = '' // optional: set to your deployed proxy URL if you enable Live mode
+
+/* STATE */
+let DOCUMENTS = [] // {id,name,type,text}
+let currentIndex = 0
+let CLUSTERS = []
+let TFIDF_KEYWORDS = []
+let CHART_LINE, CHART_SCATTER
+
+/* UTILITIES */
+const el = id => document.getElementById(id)
+const downloadBlob = (content, name, type='application/json') => {
+  const blob = new Blob([content], {type})
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click()
+}
+
+/* PDF extraction using pdf.js */
+async function extractPdfText(file){
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise
+  let text = ''
+  for(let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i)
+    const txtContent = await page.getTextContent()
+    const strings = txtContent.items.map(it => it.str)
+    text += strings.join(' ') + '\\n'
+  }
+  return text
+}
+
+/* Read files */
+async function handleFiles(files){
+  const arr = Array.from(files).slice(0,8)
+  for(const f of arr){
+    try{
+      let text=''
+      if(f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')){
+        text = await extractPdfText(f)
+      } else {
+        text = await f.text()
+      }
+      DOCUMENTS.push({id:Date.now()+Math.random(), name:f.name, type:f.type || 'text', text})
+    }catch(e){
+      console.warn('file skipped', f.name, e)
     }
+  }
+  renderDocList()
+  updateKPI()
+}
 
-    const hfJson = await hfResp.json()
-    let generated = ''
-    if(Array.isArray(hfJson) && hfJson[0]?.generated_text) generated = hfJson[0].generated_text
-    else if(hfJson.generated_text) generated = hfJson.generated_text
-    else generated = JSON.stringify(hfJson).slice(0,1000)
+/* Render documents list */
+function renderDocList(){
+  const ul = el('docList')
+  ul.innerHTML = ''
+  DOCUMENTS.forEach((d,i)=>{
+    const li = document.createElement('li')
+    li.innerHTML = `<div style="flex:1"><strong>${escapeHtml(d.name)}</strong><div class="small">${(d.text||'').slice(0,120).replace(/\\n/g,' ')}${d.text.length>120?'...':''}</div></div>
+                    <div style="display:flex;gap:6px"><button class="btn ghost" data-i="${i}" onclick="selectDoc(${i})">Open</button>
+                    <button class="btn ghost" onclick="removeDoc(${i})">Remove</button></div>`
+    ul.appendChild(li)
+  })
+  el('docCount').textContent = `${DOCUMENTS.length} docs`
+  el('kDocs').textContent = DOCUMENTS.length
+  if(DOCUMENTS.length && currentIndex >= DOCUMENTS.length) currentIndex = DOCUMENTS.length-1
+  if(DOCUMENTS.length===0) el('viewer').innerText = 'No document selected.'
+}
 
-    // Simple keywords (top repeated words)
-    const combined = documents.map(d=>d.text).join(' ')
-    const words = combined.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(w=>w.length>3)
-    const freq = {}
-    words.forEach(w => freq[w] = (freq[w]||0) + 1)
-    const top = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8)
-    const labels = top.map(t=>t[0])
-    const data = top.map(t=>t[1])
+/* select doc */
+function selectDoc(i){
+  currentIndex = i
+  el('viewer').innerText = DOCUMENTS[i].text.slice(0,10000)
+}
 
-    // small scatter mock (randomized)
-    const scatterPoints = documents.map((d,i)=>[i, (freq[labels[0]]||1) * (Math.random()*0.5 + 1)])
+/* remove doc */
+function removeDoc(i){
+  DOCUMENTS.splice(i,1)
+  renderDocList()
+  updateKPI()
+}
 
-    const insights = [
-      {title:'Summary (model)', text: generated.slice(0,1200)},
-      {title:'Files processed', text: documents.map(d=>d.name).join(', ')},
-      {title:'Prompt', text: prompt}
-    ]
+/* simple escapeHtml */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'})[c]) }
 
-    res.json({insights, chart:{labels,data}, scatterPoints})
-  }catch(e){
-    console.error(e)
-    res.status(500).json({error: e.message})
+/* =========================
+   Text processing: TF-IDF, top keywords
+   ========================= */
+
+function tokenize(s){
+  return s.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(Boolean).map(t => t.trim()).filter(t=>t.length>2)
+}
+
+function computeTFIDF(docs){
+  // docs: array of strings
+  const tfs = docs.map(text => {
+    const tk = tokenize(text)
+    const tf = {}
+    tk.forEach(w => tf[w] = (tf[w]||0)+1)
+    const len = tk.length || 1
+    Object.keys(tf).forEach(k=>tf[k] = tf[k]/len)
+    return tf
+  })
+  const df = {}
+  tfs.forEach(tf => Object.keys(tf).forEach(k => df[k] = (df[k]||0) + 1))
+  const N = docs.length || 1
+  const idf = {}
+  Object.keys(df).forEach(k => idf[k] = Math.log(1 + N / df[k]))
+  const tfidf = tfs.map(tf => {
+    const out = {}
+    Object.keys(tf).forEach(k => out[k] = tf[k] * (idf[k]||1))
+    return out
+  })
+  // Aggregate top terms
+  const agg = {}
+  tfidf.forEach(obj => Object.entries(obj).forEach(([k,v]) => agg[k] = (agg[k]||0)+v))
+  const top = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,30).map(x=>x[0])
+  return {tfidf, idf, top}
+}
+
+/* quick KMeans 2D (use TF-IDF top words as feature vector projection simplified) */
+function simpleKMeans(docVectors, k = 3, iterations = 20){
+  // docVectors: array of arrays (length M)
+  const n = docVectors.length
+  if(n===0) return []
+  const dim = docVectors[0].length
+  // init centroids randomly
+  const centroids = []
+  for(let i=0;i<k;i++){
+    centroids.push(docVectors[Math.floor(Math.random()*n)].slice())
+  }
+  let assignments = new Array(n).fill(0)
+  for(let it=0; it<iterations; it++){
+    // assign
+    for(let i=0;i<n;i++){
+      let best=0, bestd=Infinity
+      for(let j=0;j<k;j++){
+        let d=0
+        for(let m=0;m<dim;m++){
+          const diff = (docVectors[i][m]||0) - (centroids[j][m]||0)
+          d += diff*diff
+        }
+        if(d<bestd){ bestd=d; best=j }
+      }
+      assignments[i]=best
+    }
+    // update centroids
+    const sums = Array.from({length:k}, ()=>Array.from({length:dim}, ()=>0))
+    const counts = new Array(k).fill(0)
+    for(let i=0;i<n;i++){
+      const a = assignments[i]; counts[a]++
+      for(let m=0;m<dim;m++) sums[a][m] += docVectors[i][m]||0
+    }
+    for(let j=0;j<k;j++){
+      if(counts[j]===0) continue
+      for(let m=0;m<dim;m++) centroids[j][m] = sums[j][m]/counts[j]
+    }
+  }
+  return assignments
+}
+
+/* project doc TF-IDF into 2D by simple PCA-like projection using top keywords */
+function docVectorsFromTfidf(tfidfObjs, topTerms){
+  return tfidfObjs.map(tfobj => topTerms.map(t => tfobj[t]||0))
+}
+
+/* SENTIMENT - tiny lexicon */
+const SENT_LEX = {
+  'good':2,'great':3,'excellent':3,'positive':2,'happy':2,'improve':1,'improved':1,
+  'bad':-2,'poor':-2,'negative':-2,'problem':-2,'issue':-2,'risk':-2,'fail':-3
+}
+function scoreSentiment(text){
+  const tk = tokenize(text)
+  let score=0
+  tk.forEach(w=>{ if(SENT_LEX[w]) score += SENT_LEX[w] })
+  return score
+}
+
+/* ==============
+   CHARTS
+   ============== */
+function initCharts(){
+  const lineCtx = el('lineChart').getContext('2d')
+  CHART_LINE = new Chart(lineCtx, {
+    type: 'bar',
+    data: {labels:['A','B','C'], datasets:[{label:'Top keywords', data:[1,2,3], backgroundColor:'rgba(124,58,237,0.9)'}]},
+    options:{plugins:{legend:{display:false}}}
+  })
+  const scatterCtx = el('scatter').getContext('2d')
+  CHART_SCATTER = new Chart(scatterCtx, {
+    type:'bubble',
+    data:{datasets:[]},
+    options:{
+      scales:{x:{min:-1,max:10},y:{min:-1,max:10}},
+      plugins:{legend:{display:false}}
+    }
+  })
+}
+initCharts()
+
+/* render insights cards */
+function renderInsights(insArray){
+  const cont = el('insights')
+  cont.innerHTML = ''
+  insArray.forEach(item=>{
+    const d = document.createElement('div'); d.className='insight'
+    d.innerHTML = `<strong>${escapeHtml(item.title)}</strong><div class="small" style="margin-top:6px">${escapeHtml(item.text)}</div>`
+    cont.appendChild(d)
+  })
+  el('insCount').textContent = insArray.length
+}
+
+/* update KPI */
+function updateKPI(){
+  el('kDocs').textContent = DOCUMENTS.length
+  el('kClusters').textContent = CLUSTERS.length || 0
+  el('kKeywords').textContent = TFIDF_KEYWORDS.length
+}
+
+/* analyze: runs mock (client-side) or live if configured */
+async function analyze(prompt){
+  if((el('mode').value === 'live') && WORKER_BASE_URL){
+    // Live mode: send to proxy. Proxy should accept {documents, prompt} and return {insights, chart, scatterPoints}
+    try{
+      const resp = await fetch(WORKER_BASE_URL + '/analyze', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({documents: DOCUMENTS.map(d=>({name:d.name,text:d.text})), prompt})
+      })
+      if(!resp.ok) throw new Error('Proxy failure: ' + resp.status)
+      const json = await resp.json()
+      renderInsights(json.insights || [])
+      if(json.chart) {
+        CHART_LINE.data.labels = json.chart.labels
+        CHART_LINE.data.datasets[0].data = json.chart.data
+        CHART_LINE.update()
+      }
+      if(json.scatterPoints){
+        CHART_SCATTER.data.datasets = [{data: json.scatterPoints.map(p=>({x:p[0], y:p[1], r:6}))}]
+        CHART_SCATTER.update()
+      }
+      el('insCount').textContent = (json.insights || []).length
+      return
+    }catch(err){
+      console.warn('Live failed', err); alert('Live failed — falling back to mock analysis')
+    }
+  }
+
+  // Mock analysis client-side:
+  const docsText = DOCUMENTS.map(d=>d.text)
+  // TF-IDF
+  const {tfidf, idf, top} = computeTFIDF(docsText)
+  TFIDF_KEYWORDS = top.slice(0,20)
+  // Prepare insights
+  const insights = []
+  // summary: naive excerpt + top
+  const combined = docsText.join('\\n').slice(0,4000)
+  const summary = combined.length>160 ? combined.slice(0,600) + '...' : combined
+  insights.push({title:'Summary (mock)', text: (prompt || 'Summary') + '\\n' + summary.slice(0,800)})
+  insights.push({title:'Top keywords', text: TFIDF_KEYWORDS.join(', ') || 'N/A'})
+  // sentiment per doc
+  const sentiList = DOCUMENTS.map(d => ({name:d.name, score: scoreSentiment(d.text)}))
+  const sentiText = sentiList.map(s => `${s.name}: ${s.score>=2?'Positive': s.score>=0?'Neutral':'Negative'} (${s.score})`).join('\\n')
+  insights.push({title:'Sentiment (mock)', text: sentiText})
+  insights.push({title:'Action items', text: '1) Review top keywords weekly\\n2) Investigate negative sentiment docs\\n3) Run live model for deeper summarization'})
+
+  renderInsights(insights)
+
+  // Chart data for top keywords counts
+  const topCounts = top.slice(0,8).map(t => {
+    let count = 0
+    DOCUMENTS.forEach(d => { const tk = tokenize(d.text); tk.forEach(w=>{ if(w===t) count++ }) })
+    return {label:t, count}
+  })
+  CHART_LINE.data.labels = topCounts.map(x=>x.label)
+  CHART_LINE.data.datasets[0].data = topCounts.map(x=>x.count)
+  CHART_LINE.update()
+
+  // Clustering: create doc vectors from tfidf top terms -> simple kmeans
+  const docVectors = docVectorsFromTfidf(tfidf, top.slice(0,8))
+  const k = Math.min(4, Math.max(1, Math.round(Math.sqrt(DOCUMENTS.length||1))))
+  const assignments = simpleKMeans(docVectors, k, 30)
+  CLUSTERS = []
+  for(let i=0;i<k;i++) CLUSTERS.push([])
+  assignments.forEach((c,i) => CLUSTERS[c].push(i))
+
+  // prepare scatter points (2D projection: use first two dimensions or simple PCA)
+  const scatterPoints = docVectors.map((v,i) => {
+    // reduce to 2D by first two coords or sum of halves
+    const x = v[0] || 0
+    const y = v[1] || v.slice(0,4).reduce((a,b)=>a+b,0)/4 || 0
+    return {x: x*10 + (Math.random()-0.5), y: y*10 + (Math.random()-0.5), cluster: assignments[i], label: DOCUMENTS[i].name}
+  })
+  CHART_SCATTER.data.datasets = []
+  for(let c=0;c<Math.max(1,k);c++){
+    const ds = scatterPoints.filter(p=>p.cluster===c).map(p=>({x:p.x,y:p.y,r:8}))
+    CHART_SCATTER.data.datasets.push({label:'cluster'+c, data:ds})
+  }
+  CHART_SCATTER.update()
+
+  // render cluster counts
+  el('kClusters').textContent = CLUSTERS.length
+  el('kKeywords').textContent = TFIDF_KEYWORDS.length
+  el('insCount').textContent = insights.length
+}
+
+/* ===========================
+   UI wiring
+   ===========================*/
+const fileInput = el('fileInput')
+const uploader = el('uploader')
+
+uploader.addEventListener('click', ()=>fileInput.click())
+fileInput.addEventListener('change', (e)=>handleFiles(e.target.files))
+
+// drag & drop
+uploader.addEventListener('dragover', (e)=>{e.preventDefault(); uploader.style.opacity=0.85})
+uploader.addEventListener('dragleave', ()=>{uploader.style.opacity=1})
+uploader.addEventListener('drop', (e)=>{e.preventDefault(); uploader.style.opacity=1; handleFiles(e.dataTransfer.files)})
+
+el('analyzeBtn').addEventListener('click', ()=>analyze(el('prompt').value))
+el('clusterBtn').addEventListener('click', ()=>analyze(el('prompt').value))
+document.querySelectorAll('.template').forEach(b => b.addEventListener('click', (ev)=> el('prompt').value = ev.currentTarget.dataset.p))
+
+// prev/next
+el('prevDoc').addEventListener('click', ()=> {
+  if(DOCUMENTS.length===0) return
+  currentIndex = Math.max(0, currentIndex-1)
+  selectDoc(currentIndex)
+})
+el('nextDoc').addEventListener('click', ()=> {
+  if(DOCUMENTS.length===0) return
+  currentIndex = Math.min(DOCUMENTS.length-1, currentIndex+1)
+  selectDoc(currentIndex)
+})
+
+el('downloadDocs').addEventListener('click', ()=> {
+  const rows = [['name','text']]
+  DOCUMENTS.forEach(d => rows.push([d.name, d.text.replace(/\\n/g,' ') ]))
+  const csv = rows.map(r=>`"${r[0].replace(/\"/g,'\"\"')}","${r[1].replace(/\"/g,'\"\"')}"`).join('\\n')
+  downloadBlob(csv, 'documents.csv', 'text/csv')
+})
+
+el('exportAll').addEventListener('click', ()=> {
+  const payload = {
+    meta: {timestamp: new Date().toISOString()},
+    documents: DOCUMENTS,
+    insights: Array.from(document.querySelectorAll('.insight')).map(n => ({title: n.querySelector('strong').innerText, text: n.querySelector('.small') ? n.querySelector('.small').innerText : ''})),
+    clusters: CLUSTERS
+  }
+  downloadBlob(JSON.stringify(payload, null, 2), 'ai-insights-report.json', 'application/json')
+})
+
+function selectDoc(i){
+  currentIndex = i
+  el('viewer').innerText = DOCUMENTS[i].text.slice(0, 100000)
+}
+
+// remove doc action from HTML-generated button uses window scope
+window.selectDoc = selectDoc
+window.removeDoc = function(i){ DOCUMENTS.splice(i,1); renderDocList(); updateKPI() }
+
+el('themeToggle').addEventListener('click', ()=>{
+  const btn = el('themeToggle')
+  if(btn.innerText === 'Light'){
+    document.body.style.background = 'linear-gradient(180deg,#f7fafc,#e6eef8)'
+    document.body.style.color = '#0b1220'
+    btn.innerText = 'Dark'
+  } else {
+    document.body.style.background = 'linear-gradient(180deg,#041022,#07122b)'
+    document.body.style.color = '#e9f2fb'
+    btn.innerText = 'Light'
   }
 })
 
-const PORT = process.env.PORT || 8080
-app.listen(PORT, ()=> console.log('Server listening on', PORT))
+/* initial */
+renderDocList()
+updateKPI()
+
+</script>
+</body>
+</html>
